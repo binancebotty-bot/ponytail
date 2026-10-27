@@ -203,12 +203,43 @@ def _make_skill_command_handler(ctx: Any, command: str) -> Callable[[str], str]:
     return handler
 
 
+def _skill_description(skill_md: Path) -> str:
+    """Pull description out of SKILL.md frontmatter (plain, folded or literal).
+
+    Hermes lists a plugin skill by the description passed to register_skill;
+    omit it and the skill lists blank, so nothing can tell what it does.
+    """
+    try:
+        text = skill_md.read_text(encoding="utf-8").lstrip("\ufeff")
+    except OSError:
+        return ""
+    if not text.startswith("---"):
+        return ""
+    end = text.find("\n---", 3)
+    if end == -1:
+        return ""
+    lines = text[3:end].splitlines()
+    for i, line in enumerate(lines):
+        if not line.startswith("description:"):
+            continue
+        value = line.split(":", 1)[1].strip()
+        if value in ("", ">", "|", ">-", "|-"):
+            block = []
+            for follow in lines[i + 1:]:
+                if follow.strip() and not follow[:1].isspace():
+                    break
+                block.append(follow.strip())
+            value = " ".join(part for part in block if part)
+        return value[:1024]
+    return ""
+
+
 def register(ctx: Any) -> None:
     """Register Ponytail hooks, skills, and slash commands with Hermes."""
     for child in sorted(SKILLS_DIR.iterdir() if SKILLS_DIR.exists() else []):
         skill_md = child / "SKILL.md"
         if child.is_dir() and skill_md.exists():
-            ctx.register_skill(child.name, skill_md)
+            ctx.register_skill(child.name, skill_md, _skill_description(skill_md))
 
     ctx.register_hook("pre_llm_call", _pre_llm_call)
     ctx.register_hook("pre_gateway_dispatch", rewrite_gateway_command)

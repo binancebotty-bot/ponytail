@@ -76,8 +76,8 @@ class Ctx:
         self.skills = []
         self.hooks = []
         self.commands = []
-    def register_skill(self, name, path):
-        self.skills.append((name, pathlib.Path(path).as_posix()))
+    def register_skill(self, name, path, description=''):
+        self.skills.append((name, pathlib.Path(path).as_posix(), description))
     def register_hook(self, name, handler):
         self.hooks.append(name)
     def register_command(self, name, handler, description='', args_hint=''):
@@ -131,7 +131,7 @@ mod = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(mod)
 class Ctx:
     def __init__(self): self.commands = {}
-    def register_skill(self, name, path): pass
+    def register_skill(self, name, path, description=''): pass
     def register_hook(self, name, handler): pass
     def register_command(self, name, handler, description='', args_hint=''):
         self.commands[name] = handler
@@ -212,7 +212,7 @@ class Ctx:
     def __init__(self):
         self.hooks = {}
         self.commands = {}
-    def register_skill(self, name, path): pass
+    def register_skill(self, name, path, description=''): pass
     def register_hook(self, name, handler): self.hooks[name] = handler
     def register_command(self, name, handler, description='', args_hint=''):
         self.commands[name] = handler
